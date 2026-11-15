@@ -42,6 +42,37 @@ A live deployment of this template is available at:
 
 ## Development
 
+### Email admission
+
+Access uses a fixed, server-side email allowlist. It does **not** verify email
+ownership: anyone who knows an approved address can enter as that user.
+
+For local development, copy `.dev.vars.example` to `.dev.vars`. Set
+`ALLOWED_EMAILS` to a comma-separated list of approved addresses and
+`SESSION_SECRET` to a random secret of at least 32 characters (generate one with
+`openssl rand -hex 32`). Do not commit the populated file.
+
+For production, configure both values as Cloudflare Worker secrets:
+
+```bash
+npx wrangler secret put ALLOWED_EMAILS
+npx wrangler secret put SESSION_SECRET
+```
+
+Email matching ignores case and surrounding whitespace. Missing configuration
+denies access. Sessions last 24 hours in signed, HttpOnly, SameSite cookies
+(Secure on HTTPS); all `/api/*` routes except login and logout require a valid
+session. Removing an address revokes its access on its next API request.
+The static application shell is public; keep private data behind protected APIs,
+not in bundled client files or public assets.
+
+The browser remembers the last successful email in local storage and offers
+"Continue as" on later visits, including after signing out or session expiry.
+"Use a different email" clears the remembered address. Continuing always checks
+the server allowlist again; the stored address is not proof of access.
+
+Run admission tests with `npm test` using Node.js 22.18+ (native TypeScript support).
+
 Install dependencies:
 
 ```bash
